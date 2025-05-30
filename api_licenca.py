@@ -2,20 +2,35 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# Simulando banco de dados de licenças
+# Banco simulado com controle por chave e ID de máquina autorizado
 LICENCAS_VALIDAS = {
-    "minha-chave-123": {"status": "valido"},
-    "cliente-beto-2025": {"status": "valido"},
-    "cliente-expirado": {"status": "expirado"},
+    "minha-chave-123": {
+        "status": "valido",
+        "maquinas_autorizadas": ["5f39a1c2b4e709dd", "abc123def4567890"]
+    },
+    "cliente-beto-2025": {
+        "status": "valido",
+        "maquinas_autorizadas": ["beto-pc-01"]
+    },
+    "cliente-expirado": {
+        "status": "expirado",
+        "maquinas_autorizadas": []
+    },
 }
 
 @app.route('/api/validar', methods=['POST'])
 def validar():
     dados = request.get_json()
     chave = dados.get("chave", "")
+    id_maquina = dados.get("id_maquina", "")
 
     if chave in LICENCAS_VALIDAS:
-        return jsonify(LICENCAS_VALIDAS[chave])
+        licenca = LICENCAS_VALIDAS[chave]
+        if licenca["status"] != "valido":
+            return jsonify({"status": "expirado"})
+        if id_maquina not in licenca["maquinas_autorizadas"]:
+            return jsonify({"status": "bloqueado"})
+        return jsonify({"status": "valido"})
     else:
         return jsonify({"status": "invalido"})
 
