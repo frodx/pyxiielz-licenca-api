@@ -6,7 +6,7 @@ app = Flask(__name__)
 LICENCAS_VALIDAS = {
     "minha-chave-123": {
         "status": "valido",
-        "maquinas_autorizadas": ["5f39a1c2b4e709dd", "abc123def4567890"]
+        "maquinas_autorizadas": ["5f39a1c2b4e709dd", "abc123def4567890", "492f730ab1f23e20"]
     },
     "cliente-beto-2025": {
         "status": "valido",
