@@ -1,58 +1,56 @@
+# ==========================================
+# API de Licenciamento para Pyxiielz Converter
+# Versão com suporte a expiracao por data ("expira_em")
+# ==========================================
+
 from flask import Flask, request, jsonify
 from datetime import datetime
+import hashlib
 
 app = Flask(__name__)
 
-# Simulando banco de dados de licenças
-LICENCAS_VALIDAS = {
-    "minha-chave-123": {
-        "status": "valido",
-        "expira_em": "2025-12-31",
-        "maquinas_autorizadas": ["5f39a1c2b4e709dd", "492f730ab1f23e20"]
+# Simula banco de dados de licenças
+LICENCAS = [
+    {
+        "chave": "cliente-camilla-esposa",
+        "id_maquina": "",  # Deixe vazio para aceitar qualquer uma
+        "expira_em": "2025-06-30"  # AAAA-MM-DD
     },
-    "cliente-beto-2025": {
-        "status": "valido",
-        "expira_em": "2025-07-15",
-        "maquinas_autorizadas": ["beto-pc-01"]
-    },
-    "cliente-expirado": {
-        "status": "expirado",
-        "expira_em": "2024-12-31",
-        "maquinas_autorizadas": []
-    },
-    "cliente-camilla-esposa": {
-        "status": "valido",
-        "expira_em": "2025-06-30",
-        "maquinas_autorizadas": ["e8c0fed28fc99772"]
-    },
-}
+    {
+        "chave": "cliente-teste",
+        "id_maquina": "1234ABCD5678EFGH",  # Exemplo de ID fixo
+        "expira_em": "2025-12-31"
+    }
+]
 
-@app.route('/api/validar', methods=['POST'])
+def calcular_dias_restantes(data_expiracao):
+    hoje = datetime.now().date()
+    try:
+        expira = datetime.strptime(data_expiracao, "%Y-%m-%d").date()
+        delta = (expira - hoje).days
+        return delta
+    except:
+        return -1
+
+@app.route("/api/validar", methods=["POST"])
 def validar():
-    dados = request.get_json()
-    chave = dados.get("chave", "")
-    id_maquina = dados.get("id_maquina", "")
+    req = request.get_json()
+    chave = req.get("chave")
+    id_maquina = req.get("id_maquina")
 
-    if chave in LICENCAS_VALIDAS:
-        licenca = LICENCAS_VALIDAS[chave]
+    for lic in LICENCAS:
+        if lic["chave"] == chave:
+            # Verifica id_maquina se estiver definido
+            if lic["id_maquina"] and lic["id_maquina"] != id_maquina:
+                return jsonify({"status": "bloqueado"})
 
-        # Verifica se a licença foi desativada
-        if licenca["status"] != "valido":
-            return jsonify({"status": "expirado"})
-
-        # Verifica se o ID da máquina está autorizado
-        if id_maquina not in licenca["maquinas_autorizadas"]:
-            return jsonify({"status": "bloqueado"})
-
-        # Verifica validade por data
-        hoje = datetime.now().date()
-        validade = datetime.strptime(licenca["expira_em"], "%Y-%m-%d").date()
-        if hoje > validade:
-            return jsonify({"status": "expirado"})
-
-        return jsonify({"status": "valido"})
+            dias = calcular_dias_restantes(lic["expira_em"])
+            if dias >= 0:
+                return jsonify({"status": "valido", "dias_restantes": dias})
+            else:
+                return jsonify({"status": "expirado"})
 
     return jsonify({"status": "invalido"})
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
