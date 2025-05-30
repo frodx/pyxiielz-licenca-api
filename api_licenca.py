@@ -4,7 +4,7 @@ app = Flask(__name__)
 
 # Simulando banco de dados de licenças
 LICENCAS_VALIDAS = {
-    "minha-chave-123": {"status": "expirado"},
+    "minha-chave-123": {"status": "valido"},
     "cliente-beto-2025": {"status": "valido"},
     "cliente-expirado": {"status": "expirado"},
 }
