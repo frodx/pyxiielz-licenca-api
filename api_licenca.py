@@ -16,6 +16,10 @@ LICENCAS_VALIDAS = {
         "status": "expirado",
         "maquinas_autorizadas": []
     },
+    "cliente-camilla-esposa": {
+        "status": "valido",
+        "maquinas_autorizadas": ["e8c0fed28fc99772"]
+    },
 }
 
 @app.route('/api/validar', methods=['POST'])
