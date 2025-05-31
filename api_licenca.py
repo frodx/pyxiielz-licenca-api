@@ -1,3 +1,4 @@
+
 # ==========================================
 # API de Licenciamento para Pyxiielz Converter
 # Suporte a primeira ativação automática e expiração
@@ -40,6 +41,9 @@ def validar():
     req = request.get_json()
     chave = req.get("chave")
     id_maquina = req.get("id_maquina")
+
+    if not chave or not id_maquina:
+        return jsonify({"status": "invalido"})
 
     for lic in LICENCAS:
         if lic["chave"] == chave:
