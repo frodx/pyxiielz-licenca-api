@@ -1,37 +1,40 @@
 # ==========================================
 # API de Licenciamento para Pyxiielz Converter
-# Versão com suporte a expiracao por data ("expira_em")
+# Suporte a primeira ativação automática e expiração
 # ==========================================
 
 from flask import Flask, request, jsonify
 from datetime import datetime
-import hashlib
+import json
+import os
 
 app = Flask(__name__)
 
-# Simula banco de dados de licenças
-LICENCAS = [
-    {
-        "chave": "cliente-camilla-esposa",
-        "id_maquina": "",  # Deixe vazio para aceitar qualquer uma
-        "expira_em": "2025-06-30"  # AAAA-MM-DD
-    },
-    {
-        "chave": "cliente-teste",
-        "id_maquina": "1234ABCD5678EFGH",  # Exemplo de ID fixo
-        "expira_em": "2025-12-31"
-    }
-]
+# 🔐 Caminho do arquivo de licenças
+LICENCAS_FILE = "licencas.json"
 
+# 📦 Carrega as licenças do arquivo
+if os.path.exists(LICENCAS_FILE):
+    with open(LICENCAS_FILE, "r") as f:
+        LICENCAS = json.load(f)
+else:
+    LICENCAS = []
+
+# 💾 Salva alterações no arquivo
+def salvar_licencas():
+    with open(LICENCAS_FILE, "w") as f:
+        json.dump(LICENCAS, f, indent=4)
+
+# 📆 Calcula dias restantes até o vencimento
 def calcular_dias_restantes(data_expiracao):
     hoje = datetime.now().date()
     try:
         expira = datetime.strptime(data_expiracao, "%Y-%m-%d").date()
-        delta = (expira - hoje).days
-        return delta
+        return (expira - hoje).days
     except:
         return -1
 
+# 🚪 Rota principal de validação
 @app.route("/api/validar", methods=["POST"])
 def validar():
     req = request.get_json()
@@ -40,8 +43,11 @@ def validar():
 
     for lic in LICENCAS:
         if lic["chave"] == chave:
-            # Verifica id_maquina se estiver definido
-            if lic["id_maquina"] and lic["id_maquina"] != id_maquina:
+            # Primeira ativação
+            if lic["id_maquina"] == "":
+                lic["id_maquina"] = id_maquina
+                salvar_licencas()
+            elif lic["id_maquina"] != id_maquina:
                 return jsonify({"status": "bloqueado"})
 
             dias = calcular_dias_restantes(lic["expira_em"])
